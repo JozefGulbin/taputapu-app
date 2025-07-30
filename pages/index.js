@@ -1,5 +1,4 @@
-// File: pages/index.js
-
+// Triggering a new build for Vercel
 import Link from 'next/link';
 
 function HomePage() {
