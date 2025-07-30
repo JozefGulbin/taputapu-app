@@ -1,34 +1,34 @@
-// Triggering a new build for Vercel
+﻿// pages/index.js
+import Head from 'next/head';
 import Link from 'next/link';
 
-function HomePage() {
+export default function Home() {
   return (
-    // This outer div will center everything vertically and horizontally
-    <div style={{
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      height: '100vh',
-      fontFamily: 'sans-serif',
-      background: '#f0f0f0'
-    }}>
-      {/* This is our clickable link that looks like a button */}
-      <Link href="/map">
-        <a style={{
-          padding: '20px 40px',
-          fontSize: '24px',
-          fontWeight: 'bold',
-          color: 'white',
-          background: '#0070f3',
-          borderRadius: '10px',
-          textDecoration: 'none',
-          cursor: 'pointer'
-        }}>
-          WHERE AM I?
-        </a>
-      </Link>
+    <div>
+      <Head>
+        <title>Taputapu - Pagrindinis</title>
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+
+      <main className="flex flex-col items-center justify-center min-h-screen bg-white space-y-8">
+        
+        {/* --- "Kur esu?" Button --- */}
+        <Link href="/map?mode=find">
+          {/* We added classes here for styling */}
+          <a className="bg-blue-600 text-white font-bold text-3xl p-6 rounded-xl shadow-lg transition-transform transform hover:scale-105 hover:bg-blue-700">
+            Kur esu?
+          </a>
+        </Link>
+
+        {/* --- "Sek mane!" Button --- */}
+        <Link href="/map?mode=follow">
+          {/* We added the same classes here for styling */}
+          <a className="bg-blue-600 text-white font-bold text-3xl p-6 rounded-xl shadow-lg transition-transform transform hover:scale-105 hover:bg-blue-700">
+            Sek mane!
+          </a>
+        </Link>
+        
+      </main>
     </div>
   );
 }
-
-export default HomePage;

@@ -1,31 +1,49 @@
-// File: components/Map.js
+﻿'use client';
 
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import dynamic from 'next/dynamic';
 
-// This part fixes the marker icon issue
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-    iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
-    iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
-    shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+const TrackingMap = dynamic(() => import('../components/TrackingMap'), { 
+  ssr: false 
 });
 
-function Map({ location }) {
+export default function MapPage() {
+  const [location, setLocation] = useState(null);
+  const [status, setStatus] = useState('Ieškoma jūsų vietos...');
+  const router = useRouter();
+  
+  useEffect(() => {
+    const { mode } = router.query;
+    if (!mode) return;
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocation({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+        setStatus('');
+      },
+      (error) => {
+        setStatus(`Klaida: ${error.message}. Prašome leisti pasiekti jūsų vietą.`);
+      }
+    );
+  }, [router.query]);
+
+  if (!location) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <h1 className="text-2xl">{status}</h1>
+      </div>
+    );
+  }
+
   return (
-    <MapContainer center={location} zoom={13} style={{ height: '100vh', width: '100%' }}>
-      <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution='� <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      />
-      <Marker position={location}>
-        <Popup>
-          You are here!
-        </Popup>
-      </Marker>
-    </MapContainer>
+    <TrackingMap 
+      initialLatitude={location.latitude}
+      initialLongitude={location.longitude}
+      mode={router.query.mode}
+    />
   );
 }
-
-export default Map;
