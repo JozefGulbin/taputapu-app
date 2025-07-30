@@ -21,7 +21,7 @@ function MapPage() {
   }, []);
 
   // Here is the magic! We dynamically import our Map component
-  const MapWithNoSSR = dynamic(() => import('../components/Map'), {
+  const MapWithNoSSR = dynamic(() => import('../components/map'), {
     ssr: false // This line is important. It tells Next.js to only render it on the browser
   });
 
