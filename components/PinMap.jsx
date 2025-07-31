@@ -1,4 +1,4 @@
-﻿// components/TrackingMap.jsx
+﻿// components/PinMap.jsx
 
 import { useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
@@ -6,8 +6,6 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.webpack.css';
 import 'leaflet-defaulticon-compatibility';
 
-// --- This is the Pin-and-Upload logic we created earlier ---
-// It listens for map clicks and shows the form.
 function PinAndUpload() {
     const [position, setPosition] = useState(null);
     const [file, setFile] = useState(null);
@@ -15,7 +13,7 @@ function PinAndUpload() {
 
     useMapEvents({
         click(e) {
-            setPosition(e.latlng); // Set the pin's position when user clicks
+            setPosition(e.latlng);
         },
     });
 
@@ -43,7 +41,7 @@ function PinAndUpload() {
                 body: formData,
             });
             const data = await response.json();
-            if (!response.ok) throw new Error(data.message || 'Klaida įkeliant');
+            if (!response.ok) throw new Error(data.message);
             
             setMessage(`Įkėlimas sėkmingas! Failo vieta: ${data.filePath}`);
             e.target.reset();
@@ -52,15 +50,11 @@ function PinAndUpload() {
         }
     };
 
-    if (!position) {
-        return null; // If no pin is dropped, show nothing.
-    }
-
-    return (
+    return !position ? null : (
         <Marker position={position}>
             <Popup>
                 <div>
-                    <p>Naujas taškas: {position.lat.toFixed(4)}, {position.lng.toFixed(4)}</p>
+                    <p>Koordinatės: {position.lat.toFixed(4)}, {position.lng.toFixed(4)}</p>
                     <form onSubmit={handleSubmit}>
                         <input type="file" accept="image/*" onChange={handleFileChange} required />
                         <button type="submit">Įkelti nuotrauką</button>
@@ -71,35 +65,20 @@ function PinAndUpload() {
         </Marker>
     );
 }
-// --- End of Pin-and-Upload logic ---
 
-
-// This is the new, upgraded main map component
-export default function TrackingMap({ initialLatitude, initialLongitude }) {
-    // We add a marker to show the user's starting location
-    const userLocation = [initialLatitude, initialLongitude];
-
+// Ensure this line exists and is correct
+export default function PinMap() {
     return (
         <MapContainer
-            center={userLocation} // The map will now center on the user's GPS location
-            zoom={15} // Zoom in a little closer
+            center={[55.5, 24.0]}
+            zoom={7}
             style={{ height: '100vh', width: '100%' }}
         >
             <TileLayer
                 attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            
-            {/* This marker shows where the user is right now */}
-            <Marker position={userLocation}>
-                <Popup>
-                    Jūs esate čia. <br /> Dabar galite paspausti bet kur <br /> žemėlapyje, kad pridėtumėte tašką.
-                </Popup>
-            </Marker>
-
-            {/* And this component adds the power to drop a NEW pin */}
             <PinAndUpload />
-
         </MapContainer>
     );
 }
