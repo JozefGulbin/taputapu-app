@@ -1,4 +1,4 @@
-﻿// This is the complete and final code for components/PinMap.jsx
+﻿// This is the new, complete code for components/PinMap.jsx
 
 import { useState, useRef, useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
@@ -37,33 +37,23 @@ const PinMap = () => {
   const [profile, setProfile] = useState('foot-hiking');
   const routeLayerRef = useRef(null);
   const destinationMarkerRef = useRef(null);
-  
-  // A new state to trigger the API call
   const [activeRoute, setActiveRoute] = useState(null);
+  
+  // --- NEW: State for the image upload feature ---
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploadStatus, setUploadStatus] = useState('');
+  const fileInputRef = useRef(null); // To trigger the hidden file input
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setStartPoint({ lat: position.coords.latitude, lng: position.coords.longitude });
-        setLocationStatus('');
-      },
-      (error) => {
-        console.error("Geolocation error:", error);
-        setLocationStatus(`Could not get location. Defaulting to Vilnius.`);
-        setStartPoint({ lat: 54.6872, lng: 25.2797 });
-      }
+      (position) => { setStartPoint({ lat: position.coords.latitude, lng: position.coords.longitude }); setLocationStatus(''); },
+      (error) => { console.error("Geolocation error:", error); setLocationStatus(`Could not get location. Defaulting to Vilnius.`); setStartPoint({ lat: 54.6872, lng: 25.2797 }); }
     );
   }, []);
   
-  // This useEffect now ONLY runs when the 'activeRoute' changes
   useEffect(() => {
-    // If there's no active route request, do nothing.
     if (!activeRoute || !map) return;
-    
-    // First, always remove the previous route layer if it exists.
-    if (routeLayerRef.current) {
-      map.removeLayer(routeLayerRef.current);
-    }
+    if (routeLayerRef.current) { map.removeLayer(routeLayerRef.current); }
     
     setDistance('Calculating...');
     setTravelTime('');
@@ -90,14 +80,8 @@ const PinMap = () => {
       setDistance(`${kms} km`);
       setTravelTime(formatDuration(durationInSeconds));
     })
-    .catch(err => {
-      console.error('Routing Error:', err);
-      alert(`Could not calculate route.\n\n${err.message}`);
-      setDistance("Route Error");
-      setTravelTime('');
-    });
-  }, [activeRoute, map]); // This effect ONLY depends on the activeRoute object
-
+    .catch(err => { console.error('Routing Error:', err); alert(`Could not calculate route.\n\n${err.message}`); setDistance("Route Error"); setTravelTime(''); });
+  }, [activeRoute, map]);
 
   const MapEvents = () => {
     useMapEvents({
@@ -105,40 +89,63 @@ const PinMap = () => {
         setEndPoint(e.latlng);
         setDistance('');
         setTravelTime('');
-        if (routeLayerRef.current) {
-          map.removeLayer(routeLayerRef.current);
-        }
-        // When a new pin is dropped, we set activeRoute to null to stop any calculations
+        if (routeLayerRef.current) { map.removeLayer(routeLayerRef.current); }
         setActiveRoute(null);
+        setSelectedFile(null); // Clear selected file on new pin
+        setUploadStatus(''); // Clear upload status on new pin
         setTimeout(() => { destinationMarkerRef.current?.openPopup(); }, 1);
       },
     });
     return null;
   };
 
-  // The button click now sets the 'activeRoute' state, which triggers the useEffect
   const handleCreateRouteClick = () => {
-    if (startPoint && endPoint) {
-      setActiveRoute({ start: startPoint, end: endPoint, profile: profile });
-    }
+    if (startPoint && endPoint) { setActiveRoute({ start: startPoint, end: endPoint, profile: profile }); }
   };
   
-  // This useEffect updates the route when the PROFILE changes, but only if a route is already active
-  useEffect(() => {
-      if (activeRoute) {
-          setActiveRoute({ start: startPoint, end: endPoint, profile: profile });
-      }
-  }, [profile]);
+  useEffect(() => { if (activeRoute) { setActiveRoute({ start: startPoint, end: endPoint, profile: profile }); } }, [profile]);
 
+  // --- NEW: Handlers for the file upload process ---
+  const handleFileSelect = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      setUploadStatus(`Selected: ${file.name}`);
+    }
+  };
+
+  const handleImageUpload = async () => {
+    if (!selectedFile) {
+      setUploadStatus('Please select a file first.');
+      return;
+    }
+    setUploadStatus('Uploading...');
+    
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    try {
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed.');
+      }
+      
+      const result = await response.json();
+      setUploadStatus(`Success! Image URL: ${result.url}`);
+    } catch (error) {
+      setUploadStatus(`Error: ${error.message}`);
+    }
+  };
 
   if (!startPoint) {
     return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', fontSize: '2rem' }}><h1>{locationStatus}</h1></div>;
   }
 
-  const buttonStyle = {
-    padding: '8px 12px', margin: '0 5px', borderWidth: '1px', borderStyle: 'solid',
-    borderColor: '#ccc', borderRadius: '4px', cursor: 'pointer', backgroundColor: '#fff'
-  };
+  const buttonStyle = { padding: '8px 12px', margin: '0 5px', borderWidth: '1px', borderStyle: 'solid', borderColor: '#ccc', borderRadius: '4px', cursor: 'pointer', backgroundColor: '#fff' };
   const activeButtonStyle = { ...buttonStyle, backgroundColor: '#007bff', color: 'white', borderColor: '#007bff' };
 
   return (
@@ -150,11 +157,26 @@ const PinMap = () => {
         {endPoint && (
           <Marker position={endPoint} ref={destinationMarkerRef} icon={customIcon}>
             <Popup>
-              <div>
+              <div style={{minWidth: '150px'}}>
                 <b>Naujas taškas:</b> {endPoint.lat.toFixed(4)}, {endPoint.lng.toFixed(4)}<br />
                 <button onClick={handleCreateRouteClick} style={{ width: '100%', backgroundColor: '#4CAF50', color: 'white', padding: '10px', marginTop: '10px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
                   Sukurti maršrutą čia
                 </button>
+                <hr style={{margin: '10px 0'}} />
+                
+                {/* --- NEW: The hidden file input and the button to trigger it --- */}
+                <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept="image/*" style={{ display: 'none' }} />
+                <button onClick={() => fileInputRef.current.click()} style={{ width: '100%', backgroundColor: '#f0ad4e', color: 'white', padding: '10px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                  Įkelti vaizdą
+                </button>
+                {/* If a file is selected, show an upload button */}
+                {selectedFile && (
+                  <button onClick={handleImageUpload} style={{ width: '100%', backgroundColor: '#5bc0de', color: 'white', padding: '10px', marginTop: '5px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                    Upload Now
+                  </button>
+                )}
+                {/* Show the status of the upload */}
+                {uploadStatus && <p style={{marginTop: '5px', fontSize: '12px', textAlign: 'center'}}>{uploadStatus}</p>}
               </div>
             </Popup>
           </Marker>
@@ -168,11 +190,7 @@ const PinMap = () => {
       </div>
 
       {(distance && distance !== 'Calculating...') && (
-         <div style={{ 
-            position: 'absolute', top: '20px', right: '20px', zIndex: 1000, 
-            background: 'white', padding: '10px', borderRadius: '5px', 
-            border: '2px solid #333', fontWeight: 'bold', textAlign: 'right' 
-          }}>
+         <div style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 1000, background: 'white', padding: '10px', borderRadius: '5px', border: '2px solid #333', fontWeight: 'bold', textAlign: 'right' }}>
            <div>{distance}</div>
            {travelTime && <div style={{marginTop: '5px'}}>{travelTime}</div>}
          </div>
