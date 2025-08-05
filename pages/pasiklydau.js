@@ -1,33 +1,21 @@
-﻿// In pages/map.js
+﻿// In pages/pasiklydau.js
 
-import dynamic from 'next/dynamic';
-import { useMemo } from 'react';
+import Head from 'next/head';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 
-const LoadingComponent = () => (
-  <div style={{
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100vh',
-    fontSize: '2rem'
-    }}>
-    Loading Map...
-  </div>
+const PasiklydauView = dynamic(
+  () => import('../components/PasiklydauView'),
+  { ssr: false }
 );
 
-export default function MapPage() {
-  
-  const PinMapWithNoSSR = useMemo(() => dynamic(
-    () => import('../components/PinMap'), 
-    { 
-      ssr: false, 
-      loading: () => <LoadingComponent /> 
-    }
-  ), []);
-
+export default function PasiklydauPage() {
   return (
     <div style={{ position: 'relative', height: '100vh' }}>
+      <Head>
+        <title>Pasiklydau! - Taputapu</title>
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
 
       {/* The "Atgal" link, moved to the middle-left and recolored */}
       <div style={{
@@ -53,8 +41,9 @@ export default function MapPage() {
         </Link>
       </div>
 
-      <PinMapWithNoSSR />
-
+      <main>
+        <PasiklydauView />
+      </main>
     </div>
   );
 }
