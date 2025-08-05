@@ -1,12 +1,29 @@
-﻿// In pages/pasiklydau.js
+﻿// In pages/pasiklydau.js - NOW WITH A LOADING COMPONENT
 
 import Head from 'next/head';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 
+// A simple component to show while the main map component is loading
+const LoadingComponent = () => (
+  <div style={{
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100vh',
+    fontSize: '2rem'
+    }}>
+    Loading Map...
+  </div>
+);
+
 const PasiklydauView = dynamic(
   () => import('../components/PasiklydauView'),
-  { ssr: false }
+  // Add the loading option here
+  { 
+    ssr: false,
+    loading: () => <LoadingComponent /> 
+  }
 );
 
 export default function PasiklydauPage() {
@@ -17,24 +34,16 @@ export default function PasiklydauPage() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      {/* The "Atgal" link, moved to the middle-left and recolored */}
       <div style={{
-          position: 'absolute',
-          top: '50%', // Move to the vertical middle
-          left: '20px', // Keep it near the left edge
-          transform: 'translateY(-50%)', // Adjust for perfect vertical centering
-          zIndex: 1001
+          position: 'absolute', top: '50%', left: '20px',
+          transform: 'translateY(-50%)', zIndex: 1001
       }}>
         <Link href="/">
           <a style={{
-            padding: '8px 15px',
-            fontSize: '18px',
-            fontWeight: 'bold',
-            color: 'white', // White text
-            backgroundColor: 'rgba(220, 53, 69, 0.85)', // Bright, semi-transparent red
-            borderRadius: '5px',
-            textDecoration: 'none',
-            border: '1px solid rgba(160, 40, 50, 0.9)' // Darker red border
+            padding: '8px 15px', fontSize: '18px', fontWeight: 'bold',
+            color: 'white', backgroundColor: 'rgba(220, 53, 69, 0.85)',
+            borderRadius: '5px', textDecoration: 'none',
+            border: '1px solid rgba(160, 40, 50, 0.9)'
           }}>
             Atgal
           </a>

@@ -1,4 +1,4 @@
-﻿// In components/PasiklydauView.js - NOW WITH ERROR HANDLING
+﻿// In components/PasiklydauView.js - The FULL and CORRECT version
 
 import React from 'react';
 import { Map, TileLayer, Marker, Popup } from 'react-leaflet';
@@ -17,37 +17,34 @@ class PasiklydauView extends React.Component {
     position: null,
     buttonText: 'Siųsti Signalą',
     watcherId: null,
-    // NEW: State to hold any error messages
-    locationError: null 
+    locationError: null
   };
 
   componentDidMount() {
     if (!navigator.geolocation) {
-      this.setState({ locationError: 'Jūsų naršyklė nepalaiko GPS funkcijos.' }); // "Your browser does not support Geolocation."
+      this.setState({ locationError: 'Jūsų naršyklė nepalaiko GPS funkcijos.' });
       return;
     }
 
     const watcher = navigator.geolocation.watchPosition(
-      // Success Callback (this stays the same)
       (pos) => {
         const { latitude, longitude } = pos.coords;
-        this.setState({ position: [latitude, longitude], locationError: null }); // Clear any previous errors on success
+        this.setState({ position: [latitude, longitude], locationError: null });
       },
-      // NEW: Error handling callback
       (err) => {
-        let errorMessage = 'Nepavyko nustatyti vietos.'; // "Could not get location."
+        let errorMessage = 'Nepavyko nustatyti vietos.';
         switch (err.code) {
           case err.PERMISSION_DENIED:
-            errorMessage = 'Jūs atmetėte prašymą leisti naudoti GPS. Patikrinkite naršyklės nustatymus.'; // "You denied the request for Geolocation. Check browser settings."
+            errorMessage = 'Jūs atmetėte prašymą leisti naudoti GPS. Patikrinkite naršyklės nustatymus.';
             break;
           case err.POSITION_UNAVAILABLE:
-            errorMessage = 'Vietos informacija neprieinama.'; // "Location information is unavailable."
+            errorMessage = 'Vietos informacija neprieinama.';
             break;
           case err.TIMEOUT:
-            errorMessage = 'Skirtasis laikas vietos nustatymui baigėsi.'; // "The request to get user location timed out."
+            errorMessage = 'Skirtasis laikas vietos nustatymui baigėsi.';
             break;
           default:
-            errorMessage = 'Įvyko nežinoma klaida.'; // "An unknown error occurred."
+            errorMessage = 'Įvyko nežinoma klaida.';
             break;
         }
         this.setState({ locationError: errorMessage });
@@ -63,12 +60,20 @@ class PasiklydauView extends React.Component {
     }
   }
 
-  handleShareLocation = () => { /* ... this function does not need changes ... */ };
+  handleShareLocation = () => {
+    if (!this.state.position) return;
+    const [lat, lon] = this.state.position;
+    const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lon}`;
+    navigator.clipboard.writeText(googleMapsUrl).then(() => {
+      this.setState({ buttonText: 'Signalus išsiųstas! (Nuoroda nukopijuota)' });
+      setTimeout(() => this.setState({ buttonText: 'Siųsti Signalą' }), 3000);
+    });
+  };
 
   render() {
-    const { position, locationError } = this.state;
+    const { position, locationError, buttonText } = this.state;
 
-    // Show a loading or error message before the map
+    // This part handles the loading and error messages
     if (!position) {
       return (
         <div style={{ padding: '20px', textAlign: 'center', fontSize: '18px', color: locationError ? 'red' : 'black' }}>
@@ -77,10 +82,35 @@ class PasiklydauView extends React.Component {
       );
     }
     
-    // The rest of the return statement does not need changes...
+    // THIS IS THE PART THAT WAS MISSING. It returns the map view.
     return (
       <div style={{ position: 'relative', height: '100vh', width: '100%' }}>
-        {/* ... map and controls ... */}
+        <Map center={position} zoom={16} style={{ height: '100%', width: '100%' }}>
+          <TileLayer
+            attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <Marker position={position} icon={customIcon}>
+            <Popup>Jūs esate čia.</Popup>
+          </Marker>
+        </Map>
+        <div style={{
+            position: 'absolute', bottom: '20px', left: '50%', transform: 'translateX(-50%)',
+            zIndex: 1000, padding: '10px', textAlign: 'center',
+            backgroundColor: 'rgba(255, 255, 255, 0.85)', borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
+        }}>
+          <div style={{ marginBottom: '10px', fontSize: '14px' }}>
+            <h3 style={{ margin: 0, marginBottom: '5px', fontSize: '16px' }}>Jūsų koordinatės</h3>
+            <div><strong>Platuma:</strong> {position[0].toFixed(5)}</div>
+            <div><strong>Ilguma:</strong> {position[1].toFixed(5)}</div>
+          </div>
+          <button onClick={this.handleShareLocation} style={{
+              padding: '10px 20px', fontSize: '16px', fontWeight: 'bold', color: 'white',
+              backgroundColor: '#007bff', border: 'none', borderRadius: '5px', cursor: 'pointer'
+          }}>
+            {buttonText}
+          </button>
+        </div>
       </div>
     );
   }
